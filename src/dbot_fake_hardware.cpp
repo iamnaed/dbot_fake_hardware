@@ -19,6 +19,7 @@ namespace dbot_fake_hardware
         // Initialize storage variables
         state_positions_.resize(info_.joints.size(), 0.0);
         state_velocities_.resize(info_.joints.size(), 0.0);
+        state_accelerations_.resize(info_.joints.size(), 0.0);
         cmd_positions_.resize(info_.joints.size(), 0.0);
 
         return hardware_interface::CallbackReturn::SUCCESS;
@@ -27,6 +28,7 @@ namespace dbot_fake_hardware
     // Establish communication
     hardware_interface::CallbackReturn DbotFakeHardware::on_configure(const rclcpp_lifecycle::State& previous_state)
     {
+        (void)previous_state;
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Establishing communications to motor controllers...");
         rclcpp::sleep_for(std::chrono::milliseconds(500));
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Communication opened successfully. . .");
@@ -36,6 +38,7 @@ namespace dbot_fake_hardware
     // Disconnect communications
     hardware_interface::CallbackReturn DbotFakeHardware::on_cleanup(const rclcpp_lifecycle::State& previous_state)
     {
+        (void)previous_state;
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Disconnecting communications to motor controllers...");
         rclcpp::sleep_for(std::chrono::milliseconds(500));
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Communication disconected successfully. . .");
@@ -45,6 +48,7 @@ namespace dbot_fake_hardware
     // Engage actuators
     hardware_interface::CallbackReturn DbotFakeHardware::on_activate(const rclcpp_lifecycle::State& previous_state) 
     {
+        (void)previous_state;
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Engaging motors...");
         rclcpp::sleep_for(std::chrono::milliseconds(500));
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Motors engaged successfully. . .");
@@ -54,6 +58,7 @@ namespace dbot_fake_hardware
     // Disengage actuators
     hardware_interface::CallbackReturn DbotFakeHardware::on_deactivate(const rclcpp_lifecycle::State& previous_state) 
     {
+        (void)previous_state;
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Disengaging motors...");
         rclcpp::sleep_for(std::chrono::milliseconds(500));
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Motors disengaged successfully. . .");
@@ -63,6 +68,7 @@ namespace dbot_fake_hardware
     // Cleanup
     hardware_interface::CallbackReturn DbotFakeHardware::on_shutdown(const rclcpp_lifecycle::State& previous_state) 
     {
+        (void)previous_state;
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Shutting down.. please wait...");
         rclcpp::sleep_for(std::chrono::milliseconds(1000));
         RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Shut down successfull. . .");
@@ -80,6 +86,9 @@ namespace dbot_fake_hardware
 
             // State Velocity
             state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &state_velocities_[i]));
+
+            // State Acceleration
+            state_interfaces.emplace_back(hardware_interface::StateInterface(info_.joints[i].name, hardware_interface::HW_IF_ACCELERATION, &state_accelerations_[i]));
         }
         return state_interfaces;
     }
@@ -99,20 +108,26 @@ namespace dbot_fake_hardware
     // Read data
     hardware_interface::return_type DbotFakeHardware::read(const rclcpp::Time& time, const rclcpp::Duration& period)
     {
+        (void)time;
         // Positions and velocities
         auto len = info_.joints.size();
         for (auto i = 0u; i < len; i++)
         {
             // Previous position
-            double prev = state_positions_[i];
+            double prev_pos = state_positions_[i];
+            double prev_vel = state_velocities_[i];
+            double deltaSeconds = period.seconds();
 
             // Set Position
             state_positions_[i] = cmd_positions_[i];
 
             // Set Velocity
-            double ds = state_positions_[i] - prev;
-            double deltaSeconds = period.seconds();
+            double ds = state_positions_[i] - prev_pos;
             state_velocities_[i] = ds / deltaSeconds;
+
+            // Set Acceleration
+            double dv = state_velocities_[i] - prev_vel;
+            state_accelerations_[i] = dv / deltaSeconds;
         }
         return hardware_interface::return_type::OK;
     }
@@ -120,6 +135,8 @@ namespace dbot_fake_hardware
     // Write data
     hardware_interface::return_type DbotFakeHardware::write(const rclcpp::Time& time, const rclcpp::Duration& period)
     {
+        (void)time;
+        (void)period;
         //RCLCPP_INFO(rclcpp::get_logger("DbotFakeHardware"), "Sending command. . .Time: %.1fs", period.seconds());
         return hardware_interface::return_type::OK;
     }

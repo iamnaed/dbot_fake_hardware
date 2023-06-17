@@ -14,7 +14,7 @@ namespace dbot_fake_hardware
     class DbotFakeHardware : public hardware_interface::SystemInterface
     {
     public:
-        RCLCPP_SHARED_PTR_DEFINITIONS(DbotFakeHardware);
+        RCLCPP_SHARED_PTR_DEFINITIONS(DbotFakeHardware)
 
         DBOT_FAKE_HARDWARE_PUBLIC
         hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
@@ -55,7 +55,8 @@ namespace dbot_fake_hardware
         std::vector<double> cmd_positions_;
         std::vector<double> state_positions_;
         std::vector<double> state_velocities_;
-
+        std::vector<double> state_accelerations_;
+        
         // Storage
         std::vector<double> state_positions_previous_;
     };
